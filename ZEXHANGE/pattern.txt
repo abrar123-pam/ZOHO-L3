@@ -1,0 +1,79 @@
+import java.util.*;
+
+class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        boolean loop = true;
+        StoreDetails sd = new StoreDetails();
+
+        while (loop) {
+            System.out.println("1. Create Account\n2. Login\n3.Exit");
+            System.out.println("Enter your choice : ");
+            int choice = sc.nextInt();
+
+            switch (choice) {
+                case 1:
+                    createUser(sc, sd);
+                    break;
+                case 2:
+                    login(sc, sd);
+                    break;
+                case 3:
+                    System.out.println("-------EXITTING-------");
+                    loop = false;
+                    break;
+                default:
+                    System.out.println("Enter valid choice");
+                    break;
+            }
+        }
+    }
+
+    // Other methods remain unchanged...
+
+    public static void createUser(Scanner sc, StoreDetails sd) {
+        System.out.println("Full name");
+        String name = sc.next();
+        System.out.println("Email id");
+        String email = sc.next();
+        System.out.println("Phone Number");
+        String number = sc.next();
+        System.out.println("H_ID");
+        String hid = sc.next();
+        
+        // Password creation with conditions
+        String pass = "";
+        boolean isValidPassword = false;
+        while (!isValidPassword) {
+            System.out.println("Password (should not contain full name, username part of email, or mobile number, alphanumeric with mixed case, and limited special characters):");
+            pass = sc.next();
+            // Check password conditions
+            if (isValidPassword(pass, name, email, number)) {
+                isValidPassword = true;
+            } else {
+                System.out.println("Invalid password! Please try again.");
+            }
+        }
+        
+        System.out.println("RC Deposit");
+        int deposit = sc.nextInt();
+
+        Account acc = new Account(name, email, number, hid, pass, deposit);
+        sd.addWaitUser(acc);
+    }
+
+    // Method to check password conditions
+    public static boolean isValidPassword(String password, String name, String email, String number) {
+        // Check if the password contains the full name, username part of email, or mobile number
+        if (password.contains(name) || password.contains(getUsername(email)) || password.contains(number)) {
+            return false;
+        }
+        // Check password length and alphanumeric with mixed case and limited special characters
+        return password.matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$");
+    }
+
+    // Method to extract username part from email
+    public static String getUsername(String email) {
+        return email.split("@")[0];
+    }
+}

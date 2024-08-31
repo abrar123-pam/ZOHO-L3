@@ -1,0 +1,3 @@
+javac  Zylker_Railways.java -cp . -d target
+
+java Zylker_Railways -cp target

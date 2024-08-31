@@ -1,0 +1,771 @@
+package problems.BookMyShow.Controller;
+
+import problems.BookMyShow.Booking.Booking;
+import problems.BookMyShow.Movies.Movies;
+import problems.BookMyShow.Screens.Screen;
+import problems.BookMyShow.Theater.Theater;
+import problems.BookMyShow.User.User;
+import java.io.*;
+import java.util.*;
+
+public class Controller implements Serializable {
+    private static final long serialVersionUID = 1L;
+    Map<String,Theater> theaters = new HashMap<>();
+    Map<Integer, User> user = new HashMap<>();
+    List<Movies> movies = new ArrayList<>();
+    List<Booking> bookings = new ArrayList<>();
+    private static final String path = "C:\\Users\\inc5540-37\\IdeaProjects\\search\\src\\problems\\BookMyShow\\database.txt";
+
+
+    public void saveData(){
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(path))){
+            oos.writeObject(this);
+            System.out.println("Data has been saved to " + path);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static Controller loadData() {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(path))) {
+            return (Controller) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public void addMovie(Movies movie) {
+        movies.add(movie);
+    }
+
+    public void addTheater(Theater theater) {
+        theaters.put(theater.getTheaterName(),theater);
+    }
+
+    public void removeTheater(String theaterName) {
+        if(theaters.containsKey(theaterName)){
+            theaters.remove(theaterName);
+        }else{
+            System.out.println("No such theater");
+        }
+    }
+    public  void addUser(User u) {
+        user.put(u.getUserId(),u);
+    }
+
+    public void displayTheaters() {
+        for(Theater theater : theaters.values()) {
+            System.out.println(theater.getTheaterName());
+        }
+        System.out.println();
+    }
+
+    public void linkMovieToTheater(String movieTitle, String theaterToLink) {
+        Movies movie = findMovieByTitle(movieTitle);
+        Theater theater = theaters.get(theaterToLink);
+
+        if (movie != null && theater != null) {
+            movie.addTheater(theater);
+            System.out.println("Movie " + movieTitle + " has been linked to Theater " + theaterToLink);
+        } else {
+            System.out.println("Movie or Theater not found.");
+        }
+    }
+
+    private Movies findMovieByTitle(String movieTitle) {
+        for (Movies movie : movies) {
+            if (movie.getTitle().equals(movieTitle)) {
+                return movie;
+            }
+        }
+        return null;
+    }
+
+    public void displayScreens(String theaterName) {
+        Theater theater = theaters.get(theaterName);
+        if (theater != null) {
+            for (Map.Entry<Integer, Screen> entry : theater.getScreenList().entrySet()) {
+                Screen screen = entry.getValue();
+                System.out.println("Screen Number: " + screen.getScreenNumber());
+            }
+        } else {
+            System.out.println("Theater not found.");
+        }
+    }
+
+    public void setShowtime(String theaterName, int screenNumber, String showtime, String MovieTitle) {
+        Theater theater = theaters.get(theaterName);
+        Movies movie = findMovieByTitle(MovieTitle);
+
+        if (theater == null) {
+            System.out.println("Theater not found.");
+            return;
+        }
+
+        if (movie == null) {
+            System.out.println("Movie not found.");
+            return;
+        }
+
+        Screen screen = theater.getScreenList().get(screenNumber);
+
+        if (screen == null) {
+            System.out.println("Screen not found.");
+            return;
+        }
+        screen.addShowtime(showtime, MovieTitle);
+        System.out.println("Showtime " + showtime + " for movie " + MovieTitle + " has been set on Screen " + screenNumber + " in Theater " + theaterName);
+    }
+
+    public boolean isValidUser(String uName, String uPassword) {
+        for (User user : this.user.values()) {
+            if (user.getName().equals(uName) && user.getPassword().equals(uPassword)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void displayMovies() {
+
+        for (Movies m : movies){
+            System.out.println(m.getTitle());
+        }
+        System.out.println();
+    }
+
+    public void displayTheatersOnMovie(String movieTitle) {
+        Movies movie = findMovieByTitle(movieTitle);
+        if (movie != null) {
+            List<Theater> theaterList = movie.getTheaterList();
+            if (theaterList != null && !theaterList.isEmpty()) {
+                System.out.println("Theaters showing " + movieTitle + ":");
+                for (Theater theater : theaterList) {
+                    System.out.println(theater.getTheaterName());
+                }
+            } else {
+                System.out.println("No theaters are showing this movie.");
+            }
+        } else {
+            System.out.println("Movie not found.");
+        }
+    }
+
+    public void displayScreensWithShowtimes(String theaterName, String movieTitle) {
+        Theater theater = theaters.get(theaterName);
+        if (theater != null) {
+            System.out.println("Screens in " + theaterName + " showing " + movieTitle + ":");
+            for (Map.Entry<Integer, Screen> entry : theater.getScreenList().entrySet()) {
+                Screen screen = entry.getValue();
+                System.out.println("Screen Number: " + screen.getScreenNumber());
+                System.out.println("Movies and Showtimes:");
+
+                boolean movieFound = false;
+
+                for (Map.Entry<String, String> showtimeEntry : screen.getShowtimes().entrySet()) {
+                    String showtime = showtimeEntry.getKey();
+                    String currentMovieTitle = showtimeEntry.getValue();
+
+                    if (currentMovieTitle.equals(movieTitle)) {
+                        System.out.println("  Showtime: " + showtime + ", Movie: " + movieTitle);
+                        movieFound = true; // Movie was found on this screen
+                    }
+                }
+
+                if (!movieFound) {
+                    System.out.println("  No showtimes for " + movieTitle + " on this screen.");
+                }
+                System.out.println();  // Adding a new line for better readability
+            }
+        } else {
+            System.out.println("Theater not found.");
+        }
+    }
+
+
+    public void displaySeats(String theaterName, int screenNumber, String showtime) {
+        Theater theater = theaters.get(theaterName);
+        if (theater != null) {
+            Screen screen = theater.getScreenList().get(screenNumber);
+            if (screen != null) {
+                String movieTitle = screen.getShowtimes().get(showtime);
+                if (movieTitle != null) {
+                    System.out.println("Movie: " + movieTitle);
+                    System.out.println("Seats for Screen " + screenNumber + " at " + showtime + ":");
+                    displaySeatMap(screen);
+                } else {
+                    System.out.println("Showtime not found.");
+                }
+            } else {
+                System.out.println("Screen not found.");
+            }
+        } else {
+            System.out.println("Theater not found.");
+        }
+    }
+
+    private void displaySeatMap(Screen screen) {
+        int[][] seats = screen.getSeats();
+        for (int i = 0; i < seats.length; i++) {
+            for (int j = 0; j < seats[i].length; j++) {
+                int seatNumber = seats[i][j];
+                if (seatNumber <= 0) {
+                    System.out.print("[X]");
+                } else {
+                    System.out.printf("[%2d]", seatNumber);
+                }
+            }
+            System.out.println();
+        }
+    }
+
+
+    public void bookSeats(String theaterName, int screenNumber, String showtime, List<Integer> seatNumbers) {
+        Theater theater = theaters.get(theaterName);
+        if (theater != null) {
+            Screen screen = theater.getScreenList().get(screenNumber);
+            if (screen != null) {
+                String movieTitle = screen.getShowtimes().get(showtime);
+                if (movieTitle != null) {
+                    int[][] seats = screen.getSeats();
+                    int totalCost = 0;
+                    List<Integer> bookedSeats = new ArrayList<>();
+
+                    for (int seatNumber : seatNumbers) {
+                        int row = (seatNumber - 1) / seats[0].length;
+                        int column = (seatNumber - 1) % seats[0].length;
+
+                        if (seats[row][column] > 0) { // If seat is available
+                            seats[row][column] = 0; // Mark seat as booked
+                            totalCost += 120; // Assuming the cost per seat is 120 INR
+                            bookedSeats.add(seatNumber);
+                            System.out.println("Seat " + seatNumber + " has been booked for " + movieTitle + " at " + showtime);
+                        } else {
+                            System.out.println("Seat " + seatNumber + " is already booked.");
+                        }
+                    }
+
+                    if (!bookedSeats.isEmpty()) {
+                        Booking booking = new Booking(movieTitle, bookedSeats.size(), totalCost, theaterName, screenNumber, bookedSeats);
+                        bookings.add(booking);
+                        System.out.println("Total Bill: " + totalCost + " INR");
+                    }
+                } else {
+                    System.out.println("Showtime not found.");
+                }
+            } else {
+                System.out.println("Screen not found.");
+            }
+        } else {
+            System.out.println("Theater not found.");
+        }
+    }
+
+
+
+    public List<Booking> getBookings() {
+        return bookings;
+    }
+}
+------------------------------------------------------------------------------------------------------------------------------
+Theater Class
+package problems.BookMyShow.Theater;
+
+import problems.BookMyShow.Screens.Screen;
+
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+
+public class Theater implements Serializable {
+    private String TheaterName;
+    private String TheaterAddress;
+    private Map<Integer,Screen> screenList;
+
+    public Map<Integer,Screen> getScreenList() {
+        return screenList;
+    }
+
+    public void addScreen(Screen screen) {
+        this.screenList.put(screen.getScreenNumber(),screen);
+    }
+
+    public void setScreenList(Map<Integer, Screen> screenList) {
+        this.screenList = screenList;
+    }
+
+    public Theater(String theaterName, String location) {
+        this.TheaterName = theaterName;
+        this.TheaterAddress = location;
+        this.screenList = new HashMap<>();
+    }
+
+    public String getTheaterName() {
+        return TheaterName;
+    }
+
+    public void setTheaterName(String theaterName) {
+        TheaterName = theaterName;
+    }
+
+    public String getTheaterAddress() {
+        return TheaterAddress;
+    }
+
+    public void setTheaterAddress(String theaterAddress) {
+        TheaterAddress = theaterAddress;
+    }
+}
+------------------------------------------------------------------------------------------------------------------------------------
+Movies Classs
+package problems.BookMyShow.Movies;
+
+import problems.BookMyShow.Theater.Theater;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Movies implements Serializable {
+    private String title;
+    private String description;
+    private double duration;
+    private String lang;
+    private List<Theater> theaterList;
+
+    public Movies(String title, String description, double duration, String lang) {
+        this.title = title;
+        this.description = description;
+        this.duration = duration;
+        this.lang = lang;
+        this.theaterList = new ArrayList<>();
+    }
+
+    public void addTheater(Theater theater) {
+        this.theaterList.add(theater);
+    }
+
+    public List<Theater> getTheaterList() {
+        return theaterList;
+    }
+
+    public void setTheaterList(List<Theater> theaterList) {
+        this.theaterList = theaterList;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public double getDuration() {
+        return duration;
+    }
+
+    public void setDuration(double duration) {
+        this.duration = duration;
+    }
+
+    public String getLang() {
+        return lang;
+    }
+
+    public void setLang(String lang) {
+        this.lang = lang;
+    }
+}
+-------------------------------------------------------------------------------------------------------------------------------------
+Booking Class
+package problems.BookMyShow.Booking;
+
+import java.io.Serializable;
+import java.util.List;
+
+public class Booking implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private String movieTitle;
+    private int totalCost;
+    private String theaterName;
+    private int screenNumber;
+    private List<Integer> seatNumbers;
+
+    // Parameterized constructor
+    public Booking(String movieTitle, int totalCost, String theaterName, int screenNumber, List<Integer> seatNumbers) {
+        this.movieTitle = movieTitle;
+        this.totalCost = totalCost;
+        this.theaterName = theaterName;
+        this.screenNumber = screenNumber;
+        this.seatNumbers = seatNumbers;
+    }
+
+    // Default constructor
+    public Booking() {}
+
+    public Booking(String movieTitle, int size, int totalCost, String theaterName, int screenNumber, List<Integer> bookedSeats) {
+    }
+
+    // Getters and Setters
+    public String getMovieTitle() {
+        return movieTitle;
+    }
+
+    public void setMovieTitle(String movieTitle) {
+        this.movieTitle = movieTitle;
+    }
+
+    public int getTotalCost() {
+        return totalCost;
+    }
+
+    public void setTotalCost(int totalCost) {
+        this.totalCost = totalCost;
+    }
+
+    public String getTheaterName() {
+        return theaterName;
+    }
+
+    public void setTheaterName(String theaterName) {
+        this.theaterName = theaterName;
+    }
+
+    public int getScreenNumber() {
+        return screenNumber;
+    }
+
+    public void setScreenNumber(int screenNumber) {
+        this.screenNumber = screenNumber;
+    }
+
+    public List<Integer> getSeatNumbers() {
+        return seatNumbers;
+    }
+
+    public void setSeatNumbers(List<Integer> seatNumbers) {
+        this.seatNumbers = seatNumbers;
+    }
+
+    @Override
+    public String toString() {
+        return "Booking{" +
+                "movieTitle='" + movieTitle + '\'' +
+                ", totalCost=" + totalCost +
+                ", theaterName='" + theaterName + '\'' +
+                ", screenNumber=" + screenNumber +
+                ", seatNumbers=" + seatNumbers +
+                '}';
+    }
+}
+------------------------------------------------------------------------------------------------------------------------------------------
+Main Class
+package problems.BookMyShow;
+
+import problems.BookMyShow.Booking.Booking;
+import problems.BookMyShow.Controller.Controller;
+import problems.BookMyShow.Movies.Movies;
+import problems.BookMyShow.Screens.Screen;
+import problems.BookMyShow.Theater.Theater;
+import problems.BookMyShow.User.User;
+
+import java.util.ArrayList;
+import java.util.InputMismatchException;
+import java.util.List;
+import java.util.Scanner;
+
+public class Main {
+    static Scanner sc = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        Controller controller = Controller.loadData();
+        if (controller == null) {
+            controller = new Controller();
+        }
+
+        boolean flag = true;
+
+        while (flag) {
+            try {
+                System.out.println("1. Admin\n2. User\n3. Exit");
+                int choice = sc.nextInt();
+                sc.nextLine(); // Consume newline
+                switch (choice) {
+                    case 1:
+                        handleAdminLogin(controller);
+                        break;
+                    case 2:
+                        handleUserOptions(controller);
+                        break;
+                    case 3:
+                        flag = false;
+                        break;
+                    default:
+                        System.out.println("Please Enter Valid Option");
+                        break;
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input. Please enter a number.");
+                sc.nextLine(); // Consume invalid input
+            }
+        }
+
+        controller.saveData();
+    }
+
+    private static void handleAdminLogin(Controller controller) {
+        System.out.println("Enter Name:");
+        String name = sc.nextLine();
+        System.out.println("Enter Password:");
+        String password = sc.nextLine();
+        if (name.equals("admin") && password.equals("admin")) {
+            AdminLogin(controller);
+        } else {
+            System.out.println("Enter Valid name and Password");
+        }
+    }
+
+    private static void handleUserOptions(Controller controller) {
+        boolean userCheck = true;
+        while (userCheck) {
+            try {
+                System.out.println("1. Login\n2. Create Account\n3. Exit");
+                int choice1 = sc.nextInt();
+                sc.nextLine(); // Consume newline
+                switch (choice1) {
+                    case 1:
+                        loginUser(controller);
+                        break;
+                    case 2:
+                        createUser(controller);
+                        break;
+                    case 3:
+                        userCheck = false;
+                        break;
+                    default:
+                        System.out.println("Invalid option. Please try again.");
+                        break;
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input. Please enter a number.");
+                sc.nextLine(); // Consume invalid input
+            }
+        }
+    }
+
+    private static void loginUser(Controller controller) {
+        System.out.println("Enter Name ");
+        String name = sc.nextLine();
+        System.out.println("Enter Password");
+        String password = sc.nextLine();
+        if(!controller.isValidUser(name,password)){
+            System.out.println("Invalid User");
+        }else {
+            System.out.println("Login Successful");
+        }
+        System.out.println("Current Running Movies:");
+        controller.displayMovies();
+        System.out.println("Enter Movie Name to Book Ticket:");
+        String movieName = sc.nextLine();
+        controller.displayTheatersOnMovie(movieName);
+        System.out.println("Enter Theater Name:");
+        String theaterName = sc.nextLine();
+        controller.displayScreensWithShowtimes(theaterName, movieName);
+
+        System.out.println("Enter Showtime (e.g., 10:00 AM):");
+        String showTime = sc.nextLine();
+        controller.displaySeats(theaterName, 1, showTime);
+
+        // Get number of seats to book
+        int numberOfSeats;
+        while (true) {
+            System.out.println("Enter how many seats you want to book:");
+            try {
+                numberOfSeats = sc.nextInt();
+                sc.nextLine(); // Consume newline
+                if (numberOfSeats > 0) {
+                    break;
+                } else {
+                    System.out.println("Please enter a positive number of seats.");
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input. Please enter a number.");
+                sc.nextLine(); // Consume invalid input
+            }
+        }
+
+        List<Integer> seatNumbers = new ArrayList<>();
+        for (int i = 0; i < numberOfSeats; i++) {
+            while (true) {
+                System.out.println("Enter Seat Number " + (i + 1) + " to Book Ticket:");
+                try {
+                    int seatNum = sc.nextInt();
+                    sc.nextLine(); // Consume newline
+                    seatNumbers.add(seatNum);
+                    break;
+                } catch (InputMismatchException e) {
+                    System.out.println("Invalid seat number. Please enter a number.");
+                    sc.nextLine();
+                }
+            }
+        }
+
+        controller.bookSeats(theaterName,1,showTime,seatNumbers);
+    }
+
+
+    private static void createUser(Controller controller) {
+        System.out.println("Enter Name:");
+        String useName = sc.nextLine();
+        System.out.println("Enter Email:");
+        String useEmail = sc.nextLine();
+        System.out.println("Enter Password:");
+        String usePassword1 = sc.nextLine();
+        User user = new User(useName, useEmail, usePassword1);
+        controller.addUser(user);
+    }
+
+    private static void AdminLogin(Controller controller) {
+        boolean admin = true;
+        while (admin) {
+            try {
+                System.out.println("1. Add Movie\n2. Remove Movie\n3. Add Theater\n4. Remove Theater\n5. See Booking\n6. Available Theater\n7 Exit");
+                int choice = sc.nextInt();
+                sc.nextLine(); // Consume newline
+                switch (choice) {
+                    case 1:
+                        addMovie(controller);
+                        break;
+                    case 2:
+                        System.out.println("Enter theater Name");
+                        String tName = sc.next();
+                        controller.removeTheater(tName);
+                        break;
+                    case 3:
+                        addTheater(controller);
+                        break;
+                    case 4:
+                        removeTheater(controller);
+                        break;
+                    case 5:
+                        viewBookings(controller);
+                        break;
+                    case 6:
+                        controller.displayTheaters();
+                        break;
+                    case 7:
+                        admin = false;
+                        System.out.println("Exiting...");
+                        break;
+                    default:
+                        System.out.println("Invalid option. Please try again.");
+                        break;
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input. Please enter a number.");
+                sc.nextLine(); // Consume invalid input
+            }
+        }
+    }
+
+    private static void addMovie(Controller controller) {
+        System.out.println("Enter Movie Name:");
+        String name = sc.nextLine();
+        System.out.println("Enter Movie Description:");
+        String description = sc.nextLine();
+        System.out.println("Enter Duration (in hours):");
+        double duration = sc.nextDouble();
+        sc.nextLine(); // Consume newline
+        System.out.println("Enter Language:");
+        String language = sc.nextLine();
+        Movies movie = new Movies(name, description, duration, language);
+        controller.addMovie(movie);
+        boolean check = true;
+        while (check) {
+            System.out.println("1. Link Theater\n2. Set Screen\n3. Exit");
+            int choice2 = sc.nextInt();
+            sc.nextLine(); // Consume newline
+            switch (choice2) {
+                case 1:
+                    linkTheaterToMovie(controller, name);
+                    break;
+                case 2:
+                    setScreenAndShowtime(controller, name);
+                    break;
+                case 3:
+                    check = false;
+                    break;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+                    break;
+            }
+        }
+    }
+
+    private static void linkTheaterToMovie(Controller controller, String movieName) {
+        System.out.println("Press -1 to Exit");
+        controller.displayTheaters();
+        System.out.println("Enter Theater Name:");
+        String theaterToLink = sc.nextLine();
+        if (!theaterToLink.equals("-1")) {
+            controller.linkMovieToTheater(movieName, theaterToLink);
+        }
+    }
+
+    private static void setScreenAndShowtime(Controller controller, String movieName) {
+        System.out.println("Enter Theater Name:");
+        String theaterName = sc.nextLine();
+        controller.displayScreens(theaterName);
+        System.out.println("Enter Screen Number to Set Showtime:");
+        int screenNumber = sc.nextInt();
+        sc.nextLine(); // Consume newline
+        System.out.println("Enter Showtime (e.g., 10:00 AM):");
+        String showtime = sc.nextLine();
+        controller.setShowtime(theaterName, screenNumber, showtime, movieName);
+    }
+
+    private static void addTheater(Controller controller) {
+        System.out.println("Enter Theater Name:");
+        String name = sc.nextLine();
+        System.out.println("Enter Theater Location:");
+        String location = sc.nextLine();
+        Theater theater = new Theater(name, location);
+        System.out.println("Enter Number of Screens:");
+        int numberOfScreens = sc.nextInt();
+        sc.nextLine(); // Consume newline
+        for (int i = 0; i < numberOfScreens; i++) {
+            System.out.println("Number of Rows:");
+            int rows = sc.nextInt();
+            System.out.println("Number of Columns:");
+            int columns = sc.nextInt();
+            sc.nextLine(); // Consume newline
+            Screen screen = new Screen((i + 1), rows, columns);
+            theater.addScreen(screen);
+        }
+        controller.addTheater(theater);
+    }
+
+    private static void removeTheater(Controller controller) {
+        System.out.println("Enter Theater Name:");
+        String tName = sc.nextLine();
+        controller.removeTheater(tName);
+    }
+
+    private static void viewBookings(Controller controller) {
+        for (Booking booking : controller.getBookings()) {
+            System.out.println(booking.toString());
+        }
+    }
+}
+------------------------------------------------------------------------------------------------------------------------------

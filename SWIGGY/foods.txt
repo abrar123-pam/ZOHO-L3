@@ -1,0 +1,14 @@
+ Coal_Barbeque,HoneyChicken,34,220
+Coal_Barbeque,GrilledPaneer,20,180
+Coal_Barbeque,SpicyWings,50,150
+boobathyMess,Biriyani,8,120
+Arshad_Biriyani,AvocadoSalad,40,120
+Arshad_Biriyani,LobsterBisque,15,350
+Arshad_Biriyani,QuinoaBowl,30,140
+Arshad_Biriyani,GrilledSalmon,25,300
+OMRFoods,Cheeseburger,29,180
+OMRFoods,VeggieBurger,30,150
+OMRFoods,CaliforniaRoll,20,200
+OMRFoods,MargheritaPizza,60,250
+OMRFoods,SpicyTunaRoll,25,220
+OMRFoods,PepperoniPizza,40,280
